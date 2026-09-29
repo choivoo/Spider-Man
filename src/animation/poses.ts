@@ -35,6 +35,12 @@ export const HOLD_POSES: Record<string, Pose> = {
   },
 }
 
+/** Low, wide stance while the bottom spider arms plant on the ground (BALANCE mode). */
+export const POSE_CROUCH: Pose = {
+  hips: [0.18, 0, 0], spine: [0.18, 0, 0], chest: [0.08, 0, 0], head: [-0.2, 0, 0],
+  thighL: [-0.72, 0, 0.3], thighR: [-0.72, 0, -0.3], shinL: [1.2, 0, 0], shinR: [1.2, 0, 0], footL: [-0.45, 0, 0], footR: [-0.45, 0, 0],
+}
+
 /** Not selectable by the AI (triggered by effects). */
 export const EXTRA_GESTURES: Record<string, Gesture> = {
   web_shoot: {

@@ -291,6 +291,13 @@ export class NanotechController {
     this.update(0.0001)
   }
 
+  /** Debug/QA: hold the spider arms at a given deploy progress. */
+  debugArms(p: number) {
+    if (this.form !== 'SPIDER') this.reset('SPIDER')
+    this.arms = 'ARMS_DEPLOYING'; this.armsT = p * ARMS_DEPLOY_DURATION; this.armsProgress = p; this.frozen = true
+    this.update(0.0001)
+  }
+
   /** Hard reset (error recovery). */
   reset(form: Form = 'CIVILIAN') {
     this.phase = 'IDLE'; this.form = form; this.queue.length = 0; this.fired.clear()

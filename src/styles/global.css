@@ -35,8 +35,10 @@ button:disabled { opacity: .45; cursor: default; }
 [data-theme='spider'] { --accent: #e94b52; --panel-border: rgba(233,75,82,.28); }
 [data-theme='spider'] .chat-title { color: #ff8a90; }
 [data-theme='spider'] .bubble.user { background: linear-gradient(135deg, #c81d25, #8f1219); color: #fff; }
-.controls { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 16px; backdrop-filter: blur(14px); z-index: 3; }
-.controls button { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 7px 12px; }
+.controls-wrap { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 3; max-width: calc(100% - 20px); }
+.controls.modes { position: absolute; left: 14px; top: 64px; flex-direction: column; padding: 4px; transform: none; } .controls.modes button { padding: 5px 11px; font-size: 12px; } .controls button.on { background: rgba(233,75,82,.35); border-color: #e94b52; }
+.controls { display: flex; flex-wrap: nowrap; justify-content: center; gap: 6px; padding: 6px; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 16px; backdrop-filter: blur(14px); }
+.controls button { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 7px 10px; white-space: nowrap; }
 .controls kbd { font: 11px ui-monospace, monospace; opacity: .6; padding: 1px 5px; border: 1px solid var(--panel-border); border-radius: 5px; }
 .hud { position: absolute; top: 14px; right: 14px; width: 210px; pointer-events: none; opacity: 0; transform: translateY(-6px); transition: opacity .5s, transform .5s; color: #ffcf6b; z-index: 2; }
 .hud.on { opacity: 1; transform: none; }

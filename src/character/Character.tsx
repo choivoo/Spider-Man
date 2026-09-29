@@ -10,7 +10,10 @@ import { partUniforms, globalNano } from '../transformation/nanoMaterial'
 import { NanoParticles } from '../transformation/NanoParticles'
 import { useQuality } from '../quality/quality'
 import { fx } from './SpiderFX'
+import { SpiderArms } from '../spiderArms/SpiderArms'
+import { POSE_CROUCH } from '../animation/poses'
 import { LODMesh } from './loft'
+import { LODManager } from './lod'
 import { SUIT_PARTS, type SuitPartName } from './rigSpec'
 
 export default function Character() {
@@ -44,7 +47,9 @@ export default function Character() {
         o.parent!.add(out); outlines.push({ src: o, out })
       }
     })
-    return { rig, civ, suit, civByPart, suitByPart, particles, outlines, outlineU }
+    const arms = new SpiderArms(rig, useQuality.getState().config.armSegments)
+    const lod = new LODManager()
+    return { rig, civ, suit, civByPart, suitByPart, particles, outlines, outlineU, arms, lod }
   }, [])
   const { gl, size, viewport } = useThree()
 
@@ -55,7 +60,7 @@ export default function Character() {
       director.look.pointerNdc.set(((e.clientX - r.left) / r.width) * 2 - 1, -(((e.clientY - r.top) / r.height) * 2 - 1))
     }
     window.addEventListener('pointermove', onMove)
-    return () => { window.removeEventListener('pointermove', onMove); director.detachRig(); model.civ.dispose(); model.suit.dispose(); model.particles.dispose() }
+    return () => { window.removeEventListener('pointermove', onMove); director.detachRig(); model.civ.dispose(); model.suit.dispose(); model.particles.dispose(); model.arms.dispose() }
   }, [model, gl])
 
   useFrame(({ camera, clock }, dt) => {
@@ -91,6 +96,10 @@ export default function Character() {
     model.suit.core.scale.setScalar((0.6 + nano.core * 1.4) * pulse)
     model.suit.coreLight.intensity = nano.core * 2.2 * pulse
     const cam = camera as THREE.PerspectiveCamera
+    model.lod.update(camera, model.rig.root, [model.civ.lodMeshes, model.suit.lodMeshes], useQuality.getState().config, (l) => model.arms.setLOD(l))
+    model.arms.setMode(nano.armsMode)
+    model.arms.update(dt, nano.armsProgress, fx.senseFlare)
+    if (director.anim) director.anim.extra = nano.armsMode === 'BALANCE' && nano.arms === 'ARMS_DEPLOYED' ? POSE_CROUCH : {}
     // spider-sense outline pulse
     const on = fx.outline > 0.02
     model.outlineU.value = 0.004 + fx.outline * 0.012
