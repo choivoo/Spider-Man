@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { HEAD } from './profiles'
 import { frontZ, buildLoft, type Section } from './loft'
 import { makeMaterial } from './materials'
+import { patchNano } from '../transformation/nanoMaterial'
 import type { FaceState } from '../animation/faceTypes'
 
 const N = 22 // mouth contour points
@@ -33,12 +34,12 @@ export class CivilianFace {
 
     for (const [g, sx] of [[this.eyeL, 1], [this.eyeR, -1]] as const) {
       g.position.set(sx * eyeX, eyeY, ez - 0.0075)
-      const ball = new THREE.Mesh(new THREE.SphereGeometry(eyeballR, 24, 18), makeMaterial('sclera'))
-      const iris = new THREE.Mesh(new THREE.CircleGeometry(0.0062, 24), makeMaterial('iris'))
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(eyeballR, 24, 18), makeMaterial('sclera', 'Head'))
+      const iris = new THREE.Mesh(new THREE.CircleGeometry(0.0062, 24), makeMaterial('iris', 'Head'))
       iris.position.z = eyeballR * 0.985
-      const pupil = new THREE.Mesh(new THREE.CircleGeometry(0.0028, 16), makeMaterial('pupil'))
+      const pupil = new THREE.Mesh(new THREE.CircleGeometry(0.0028, 16), makeMaterial('pupil', 'Head'))
       pupil.position.z = eyeballR * 0.99 + 0.0002
-      const glint = new THREE.Mesh(new THREE.CircleGeometry(0.0013, 8), new THREE.MeshBasicMaterial({ color: '#ffffff' }))
+      const glint = new THREE.Mesh(new THREE.CircleGeometry(0.0013, 8), (() => { const m = new THREE.MeshBasicMaterial({ color: '#ffffff' }); patchNano(m, 'Head', true); return m })())
       glint.position.set(0.0022, 0.0028, eyeballR * 0.99 + 0.0004)
       g.add(ball, iris, pupil, glint)
       this.group.add(g)
@@ -46,7 +47,7 @@ export class CivilianFace {
 
     const lidGeo = new THREE.SphereGeometry(eyeballR + 0.0008, 22, 12, 0, Math.PI * 2, 0, 1.7)
     const mk = (geo: THREE.BufferGeometry, x: number, flip: boolean) => {
-      const m = new THREE.Mesh(geo, makeMaterial('lid'))
+      const m = new THREE.Mesh(geo, makeMaterial('lid', 'Head'))
       m.position.set(x, eyeY, ez - 0.0075)
       if (flip) m.scale.y = -1
       this.group.add(m)
@@ -60,7 +61,7 @@ export class CivilianFace {
     browGeo.rotateZ(Math.PI / 2)
     for (const [b, sx] of [[this.browL, 1], [this.browR, -1]] as const) {
       b.geometry = browGeo
-      b.material = makeMaterial('brow')
+      b.material = makeMaterial('brow', 'Head')
       b.position.set(sx * 0.036, this.baseBrowY, frontZ(HEAD, this.baseBrowY) + 0.0025)
       b.scale.set(1, 1, 0.8)
       this.group.add(b)
@@ -75,18 +76,18 @@ export class CivilianFace {
       { y: -0.002, rx: 0.0125, rz: 0.0135, cz: 0.0125 },
       { y: -0.0095, rx: 0.011, rz: 0.008, cz: 0.0105 },
     ]
-    const nose = new THREE.Mesh(buildLoft(noseSecs, { radial: 16, rings: 10, capBottom: true }), makeMaterial('skin'))
+    const nose = new THREE.Mesh(buildLoft(noseSecs, { radial: 16, rings: 10, capBottom: true }), makeMaterial('skin', 'Head'))
     nose.position.set(0, 0, noseZ - 0.001)
     this.group.add(nose)
     for (const sx of [1, -1]) {
-      const wing = new THREE.Mesh(new THREE.SphereGeometry(0.0066, 12, 10), makeMaterial('skin'))
+      const wing = new THREE.Mesh(new THREE.SphereGeometry(0.0066, 12, 10), makeMaterial('skin', 'Head'))
       wing.position.set(sx * 0.0105, -0.004, noseZ + 0.0085)
       this.group.add(wing)
     }
 
     // ears
     for (const sx of [1, -1]) {
-      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.02, 14, 12), makeMaterial('skin'))
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.02, 14, 12), makeMaterial('skin', 'Head'))
       ear.scale.set(0.28, 1, 0.65); ear.position.set(sx * 0.0765, 0.025, -0.006); ear.rotation.z = sx * 0.12
       this.group.add(ear)
     }
@@ -100,7 +101,7 @@ export class CivilianFace {
     const fi: number[] = []
     for (let i = 0; i < N; i++) fi.push(N, i, (i + 1) % N)
     fillG.setIndex(fi)
-    this.mouthFill = new THREE.Mesh(fillG, makeMaterial('mouth'))
+    this.mouthFill = new THREE.Mesh(fillG, makeMaterial('mouth', 'Head'))
     this.mouthFill.frustumCulled = false
 
     const lipG = new THREE.BufferGeometry()
@@ -109,14 +110,14 @@ export class CivilianFace {
     const li: number[] = []
     for (let i = 0; i < N; i++) { const a = i, b = (i + 1) % N; li.push(a, N + a, b, b, N + a, N + b) }
     lipG.setIndex(li)
-    this.lips = new THREE.Mesh(lipG, makeMaterial('lip'))
+    this.lips = new THREE.Mesh(lipG, makeMaterial('lip', 'Head'))
     this.lips.frustumCulled = false
 
     const teethG = new THREE.BufferGeometry()
     this.teethPos = new Float32Array(8 * 3)
     teethG.setAttribute('position', new THREE.BufferAttribute(this.teethPos, 3))
     teethG.setIndex([0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6])
-    this.teeth = new THREE.Mesh(teethG, makeMaterial('teeth'))
+    this.teeth = new THREE.Mesh(teethG, makeMaterial('teeth', 'Head'))
     this.teeth.frustumCulled = false
     this.mouthGroup.add(this.mouthFill, this.teeth, this.lips)
     this.group.add(this.mouthGroup)

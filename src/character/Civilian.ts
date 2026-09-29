@@ -3,9 +3,26 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { buildLoft, buildLoftLOD, LODMesh, LOD_SETTINGS, sliceProfile, shiftY, sampleSection, type Section } from './loft'
 import { TORSO, ARM, LEG, NECK, HEAD, SHOE } from './profiles'
 import { makeMaterial, type MatKind } from './materials'
-import { restWorldY, type BoneName } from './rigSpec'
+import { restWorldY, type BoneName, type SuitPartName } from './rigSpec'
+import { patchNano } from '../transformation/nanoMaterial'
+import { bakeNanoForTree } from '../transformation/bakeNano'
 import type { Rig } from './ProceduralRig'
 import { CivilianFace } from './CivilianFace'
+
+/** Which suit region does a civilian mesh belong to (and therefore dissolve with)? */
+export function partFromName(name: string): SuitPartName {
+  const side = /_R$/.test(name) ? 'R' : 'L'
+  if (/Pelvis|Abdomen|Tee_Waist|Pants_Hips|Blazer_Skirt|Blazer_Waist/.test(name)) return 'Waist'
+  if (/Skin_Chest|Tee_Chest|Blazer_Chest|Lapel/.test(name)) return 'Chest'
+  if (/Neck/.test(name)) return 'Neck'
+  if (/UpperArm|Sleeve_Upper/.test(name)) return `Arm_${side}` as SuitPartName
+  if (/ForeArm|Sleeve_Fore/.test(name)) return `Forearm_${side}` as SuitPartName
+  if (/Hand/.test(name)) return `Hand_${side}` as SuitPartName
+  if (/Thigh/.test(name)) return `Thigh_${side}` as SuitPartName
+  if (/Shin/.test(name)) return `Shin_${side}` as SuitPartName
+  if (/Shoe|Sole|Lace/.test(name)) return `Foot_${side}` as SuitPartName
+  return 'Head'
+}
 
 export interface CivilianModel {
   group: THREE.Group
@@ -51,8 +68,7 @@ export function buildCivilian(rig: Rig): CivilianModel {
 
   const addLoft = (bone: BoneName, secs: Section[], kind: MatKind, o: { rings?: number; capTop?: boolean; capBottom?: boolean; openFront?: (y: number) => number; name: string; double?: boolean; parent?: THREE.Object3D }) => {
     const geos = buildLoftLOD(secs, { ringsBase: o.rings ?? 16, capTop: o.capTop, capBottom: o.capBottom, openFront: o.openFront })
-    const mat = o.double ? (makeMaterial(kind) as THREE.MeshStandardMaterial).clone() : makeMaterial(kind)
-    if (o.double) (mat as THREE.MeshStandardMaterial).side = THREE.DoubleSide
+    const mat = makeMaterial(kind, partFromName(o.name), { double: o.double })
     const m = new LODMesh(geos, mat)
     m.name = o.name
     m.castShadow = true; m.receiveShadow = true
@@ -80,7 +96,7 @@ export function buildCivilian(rig: Rig): CivilianModel {
     addLoft(`shin${side}` as BoneName, shiftY(sliceProfile(LEG, -0.43, -0.845, 10), -0.44), 'skin', { name: `Skin_Shin_${side}` })
     // hand
     const hg = buildHandLOD(side, 0)
-    const hand = new LODMesh(hg, makeMaterial('skin')); hand.name = `Skin_Hand_${side}`; hand.castShadow = true
+    const hand = new LODMesh(hg, makeMaterial('skin', `Hand_${side}`)); hand.name = `Skin_Hand_${side}`; hand.castShadow = true
     rig.bones[`hand${side}` as BoneName].add(hand); lodMeshes.push(hand)
   }
 
@@ -93,7 +109,7 @@ export function buildCivilian(rig: Rig): CivilianModel {
 
   // hair
   const hairCap = buildHairCap()
-  const capMesh = new LODMesh(hairCap, makeMaterial('hair')); capMesh.name = 'Hair_Cap'; head.add(capMesh); lodMeshes.push(capMesh)
+  const capMesh = new LODMesh(hairCap, makeMaterial('hair', 'Head')); capMesh.name = 'Hair_Cap'; head.add(capMesh); lodMeshes.push(capMesh)
   const hairInstanced = buildCurls()
   head.add(hairInstanced)
 
@@ -102,7 +118,7 @@ export function buildCivilian(rig: Rig): CivilianModel {
   addLoft('spine', shiftY(T(1.02, 1.24, 6, () => 0.004), wy('spine')), 'tee', { name: 'Tee_Waist' })
   addLoft('chest', shiftY(T(1.2, 1.47, 9, () => 0.005), wy('chest')), 'tee', { name: 'Tee_Chest', capTop: false })
   {
-    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.0075, 8, 32), makeMaterial('tee'))
+    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.0075, 8, 32), makeMaterial('tee', 'Neck'))
     collar.rotation.x = Math.PI / 2 - 0.12; collar.position.set(0, 1.455 - wy('neck') + 0.005, 0.006)
     rig.bones.neck.add(collar)
   }
@@ -125,7 +141,7 @@ export function buildCivilian(rig: Rig): CivilianModel {
       g.rotateX(Math.PI / 2)
       return g
     })
-    const shoe = new LODMesh(geos, makeMaterial('shoe')); shoe.name = `Shoe_${side}`; shoe.castShadow = true
+    const shoe = new LODMesh(geos, makeMaterial('shoe', `Foot_${side}`)); shoe.name = `Shoe_${side}`; shoe.castShadow = true
     foot.add(shoe); lodMeshes.push(shoe)
     const soleSec: Section[] = SHOE.map((s) => ({ y: s.z, rx: s.hw + 0.002, rz: 0.008, cz: -(s.cy - s.hh + 0.004), n: 2.4 }))
     const soleGeos = LOD_SETTINGS.map((l) => {
@@ -133,10 +149,10 @@ export function buildCivilian(rig: Rig): CivilianModel {
       g.rotateX(Math.PI / 2)
       return g
     })
-    const sole = new LODMesh(soleGeos, makeMaterial('sole')); sole.name = `Sole_${side}`; foot.add(sole); lodMeshes.push(sole)
+    const sole = new LODMesh(soleGeos, makeMaterial('sole', `Foot_${side}`)); sole.name = `Sole_${side}`; foot.add(sole); lodMeshes.push(sole)
     // laces
     for (let i = 0; i < 4; i++) {
-      const lace = new THREE.Mesh(new THREE.BoxGeometry(0.058, 0.0035, 0.006), makeMaterial('lace'))
+      const lace = new THREE.Mesh(new THREE.BoxGeometry(0.058, 0.0035, 0.006), makeMaterial('lace', `Foot_${side}`))
       const z = -0.005 + i * 0.024
       lace.position.set(0, -0.0055 - i * 0.0085 - 0.014, z + 0.002)
       lace.position.y = -0.033 + 0.03 - i * 0.0004 - 0.0
@@ -158,7 +174,7 @@ export function buildCivilian(rig: Rig): CivilianModel {
     addLoft(`foreArm${side}` as BoneName, shiftY(sliceProfile(ARM, -0.27, -0.53, 8, () => 0.016), -0.285), 'blazer', { name: `Sleeve_Fore_${side}`, double: true })
     const fa = rig.bones[`foreArm${side}` as BoneName]
     for (let k = 0; k < 3; k++) {
-      const b = new THREE.Mesh(new THREE.SphereGeometry(0.0055, 10, 8), makeMaterial('button'))
+      const b = new THREE.Mesh(new THREE.SphereGeometry(0.0055, 10, 8), makeMaterial('button', `Forearm_${side}`))
       b.position.set(0, -0.215 + k * 0.021, -0.05); b.scale.set(1, 1, 0.6)
       b.position.set(side === 'L' ? 0.015 : -0.015, -0.2 + k * 0.022, 0.042)
       fa.add(b)
@@ -171,7 +187,7 @@ export function buildCivilian(rig: Rig): CivilianModel {
   }
   // pocket flaps
   for (const sx of [1, -1]) {
-    const flap = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.035, 0.012), makeMaterial('blazer'))
+    const flap = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.035, 0.012), makeMaterial('blazer', 'Waist'))
     const th = sx * 1.12, y = 0.9
     const p = ellipse(TORSO, y, th, blazerInfl(y) + 0.004)
     flap.position.set(p.x, y - wy('hips'), p.z); flap.rotation.y = th; flap.rotation.z = -sx * 0.12
@@ -179,6 +195,7 @@ export function buildCivilian(rig: Rig): CivilianModel {
   }
 
   group.add(rig.bones.hips === undefined ? new THREE.Group() : new THREE.Group())
+  bakeNanoForTree(rig)
   const dispose = () => {
     lodMeshes.forEach((m) => m.disposeAll())
   }
@@ -212,8 +229,7 @@ function buildLapel(sx: number, chestY: number): THREE.Mesh {
   const g = new THREE.BufferGeometry()
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
   g.setIndex(idx); g.computeVertexNormals()
-  const m = new THREE.Mesh(g, (makeMaterial('lapel') as THREE.MeshStandardMaterial).clone())
-  ;(m.material as THREE.MeshStandardMaterial).side = THREE.DoubleSide
+  const m = new THREE.Mesh(g, makeMaterial('lapel', 'Chest', { double: true }))
   m.name = sx > 0 ? 'Lapel_L' : 'Lapel_R'
   return m
 }
@@ -292,6 +308,7 @@ function buildCurls(): THREE.InstancedMesh {
   const R = rng(20240607)
   const geo = new THREE.IcosahedronGeometry(1, 1)
   const mat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.5, metalness: 0.05, vertexColors: false })
+  patchNano(mat, 'Head', true)
   const items: { m: THREE.Matrix4; c: THREE.Color }[] = []
   const tmp = new THREE.Object3D()
   const base = new THREE.Color('#3b2416')

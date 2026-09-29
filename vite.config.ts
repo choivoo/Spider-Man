@@ -40,7 +40,7 @@ function devApi(): Plugin {
 
 export default defineConfig({
   plugins: [react(), devApi()],
-  resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
+  resolve: { alias: { '@': path.resolve(import.meta.dirname, "src") } },
   build: { target: 'es2022', chunkSizeWarningLimit: 1600 },
   test: { environment: 'node', include: ['tests/**/*.test.ts'] },
 })

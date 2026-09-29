@@ -13,6 +13,10 @@ export interface LoftOptions {
   capBottom?: boolean
   /** remove faces whose front angle (from +Z) is within halfAngle(y) — for open jackets */
   openFront?: (y: number) => number
+  /** remap the V coordinate into [v0, v1] of a shared texture (for parts split across bones) */
+  uvV?: [number, number]
+  /** mirror U about the front axis so one left-side texture serves the right side */
+  mirrorU?: boolean
   /** grow all sections outward by this amount (clothing thickness) */
   inflate?: number
   /** per-vertex nano reveal order values (0..1), see shaders/nano */
@@ -75,7 +79,8 @@ export function buildLoft(secs: Section[], o: LoftOptions): THREE.BufferGeometry
       const x = s.cx + sx * (s.rx + infl) , z = s.cz + sz * (s.rz + infl)
       void len
       pos.push(x, s.y, z)
-      uv.push(u, v)
+      const uu = o.mirrorU ? (((0.5 - u) % 1) + 1) % 1 : u
+      uv.push(uu, o.uvV ? o.uvV[0] + v * (o.uvV[1] - o.uvV[0]) : v)
       const nn = o.nano ? o.nano(x, s.y, z, u, v) : [v, v]
       n1.push(nn[0]); n2.push(nn[1])
     }
@@ -162,7 +167,7 @@ export const shiftY = (secs: Section[], dy: number): Section[] => secs.map((s) =
 export const inflateSecs = (secs: Section[], d: number): Section[] => secs.map((s) => ({ ...s, rx: s.rx + d, rz: s.rz + d }))
 
 /** Interpolate a master profile at arbitrary y (profile must be monotonic in y). */
-export function profileAt(master: Section[], y: number): Section {
+export function profileAt(master: Section[], y: number): Required<Section> {
   const asc = master[0].y < master[master.length - 1].y
   const ys = master.map((s) => s.y)
   const lo = Math.min(...ys), hi = Math.max(...ys)

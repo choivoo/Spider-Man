@@ -3,6 +3,9 @@ import * as THREE from 'three'
 export type MatKind = 'skin' | 'hair' | 'blazer' | 'lapel' | 'tee' | 'pants' | 'shoe' | 'sole' | 'lace' | 'button'
   | 'sclera' | 'iris' | 'pupil' | 'lip' | 'mouth' | 'teeth' | 'brow' | 'lid'
 
+import { patchNano } from '../transformation/nanoMaterial'
+import type { SuitPartName } from './rigSpec'
+
 const cache = new Map<string, THREE.Material>()
 
 /** Small tileable fabric-ish normal map generated once (cheap, avoids asset dependency). */
@@ -37,8 +40,9 @@ const PALETTE = {
   shoe: '#060607', sole: '#0a0a0b', lace: '#111114', button: '#0a0a0a',
 }
 
-export function makeMaterial(kind: MatKind): THREE.Material {
-  const hit = cache.get(kind)
+export function makeMaterial(kind: MatKind, part?: SuitPartName, opts: { double?: boolean } = {}): THREE.Material {
+  const key = `${kind}|${part ?? ''}|${opts.double ? 'd' : ''}`
+  const hit = cache.get(key)
   if (hit) return hit
   let m: THREE.Material
   switch (kind) {
@@ -97,7 +101,9 @@ export function makeMaterial(kind: MatKind): THREE.Material {
       m = new THREE.MeshStandardMaterial({ color: PALETTE.skin, roughness: 0.6 })
       break
   }
-  cache.set(kind, m)
+  if (opts.double) m.side = THREE.DoubleSide
+  if (part) patchNano(m, part, true)
+  cache.set(key, m)
   return m
 }
 

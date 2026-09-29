@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import { useCharacterStore, type CameraMode } from '../store/characterStore'
+import { command } from '../transformation'
+import { useSettings } from '../store/settingsStore'
 
 const CAMERA_ORDER: CameraMode[] = ['full', 'upper', 'face', 'cinematic']
 
@@ -21,11 +23,16 @@ export const registerHotkey = (combo: string, fn: (e: KeyboardEvent) => void) =>
 export function useHotkeys() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { (document.activeElement as HTMLElement | null)?.blur?.(); extra.get('escape')?.(e); return }
       if (isTyping(e.target) || e.ctrlKey || e.metaKey || e.altKey) return
       const combo = (e.shiftKey ? 'shift+' : '') + e.key.toLowerCase()
       const fn = extra.get(combo)
       if (fn) { e.preventDefault(); fn(e); return }
       if (combo === 'c') cycleCamera()
+      else if (combo === 'shift+s') command('SUIT_TOGGLE')
+      else if (combo === 'm') command('MASK_TOGGLE')
+      else if (combo === 'a') command('ARMS_TOGGLE')
+      else if (combo === 'h') useSettings.getState().set({ hud: !useSettings.getState().hud })
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

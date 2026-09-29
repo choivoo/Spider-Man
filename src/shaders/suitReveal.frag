@@ -1,0 +1,11 @@
+uniform float uReveal;
+uniform float uInvert;
+uniform float uEdgeWidth;
+uniform float uEdgeGlow;
+uniform float uTime;
+uniform float uNoiseScale;
+uniform float uNanoDensity;
+uniform vec3 uEdgeColorA;
+uniform vec3 uEdgeColorB;
+varying float vNano;
+varying vec3 vNanoPos;

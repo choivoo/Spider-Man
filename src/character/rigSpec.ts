@@ -89,3 +89,11 @@ export const SUIT_PART_BONE: Record<SuitPartName, BoneName> = {
 
 export const CHARACTER_HEIGHT = 1.78
 export const HEAD_HEIGHT = 0.235
+
+/** Rest-pose world position of a bone (sum of parent offsets; ignores the tiny A-pose rotations). */
+export function restWorldPos(name: BoneName): [number, number, number] {
+  let x = 0, y = 0, z = 0
+  let cur: BoneName | 'root' = name
+  while (cur !== 'root') { const d: { parent: BoneName | 'root'; pos: [number, number, number] } = BONE_DEF[cur]; x += d.pos[0]; y += d.pos[1]; z += d.pos[2]; cur = d.parent }
+  return [x, y, z]
+}

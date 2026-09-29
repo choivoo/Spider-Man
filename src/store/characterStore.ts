@@ -11,6 +11,8 @@ export interface Message {
 
 export type CameraMode = 'face' | 'upper' | 'full' | 'cinematic'
 
+export interface SuitStatus { form: 'CIVILIAN' | 'SPIDER'; phase: 'IDLE' | 'SUIT_UP' | 'SUIT_DOWN'; mask: string; arms: string; armsMode: string; blend: number; label: string }
+
 export type Connection = 'ok' | 'offline-demo' | 'unavailable'
 
 interface CharacterStore {
@@ -19,11 +21,13 @@ interface CharacterStore {
   connection: Connection
   emotion: { emotion: Emotion; intensity: number }
   speaking: boolean
+  suit: SuitStatus
   cameraMode: CameraMode
   vars: CharacterVars
   addMessage: (m: Omit<Message, 'id' | 'ts'>) => Message
   setBusy: (b: boolean) => void
   setSpeaking: (b: boolean) => void
+  setSuit: (s: SuitStatus) => void
   setCameraMode: (m: CameraMode) => void
   setConnection: (c: Connection) => void
   setEmotion: (emotion: Emotion, intensity: number) => void
@@ -37,6 +41,7 @@ export const useCharacterStore = create<CharacterStore>((set) => ({
   connection: 'ok',
   emotion: { emotion: 'neutral', intensity: 0.3 },
   speaking: false,
+  suit: { form: 'CIVILIAN', phase: 'IDLE', mask: 'MASK_OPEN', arms: 'ARMS_RETRACTED', armsMode: 'IDLE', blend: 0, label: 'CIVILIAN_IDLE' },
   cameraMode: 'full',
   vars: { ...DEFAULT_VARS },
   addMessage: (m) => {
@@ -46,6 +51,7 @@ export const useCharacterStore = create<CharacterStore>((set) => ({
   },
   setBusy: (busy) => set({ busy }),
   setSpeaking: (speaking) => set({ speaking }),
+  setSuit: (suit) => set({ suit }),
   setCameraMode: (cameraMode) => set({ cameraMode }),
   setConnection: (connection) => set({ connection }),
   setEmotion: (emotion, intensity) => set({ emotion: { emotion, intensity } }),
