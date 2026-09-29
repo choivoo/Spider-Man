@@ -1,5 +1,6 @@
 import { sendChat, ChatError } from './claude'
 import { useCharacterStore } from '../store/characterStore'
+import { director } from '../character/director'
 import type { ChatRequest, CharacterResponse } from './schema'
 
 /** Sends the user's message through the AI pipeline and returns the parsed response (or null on failure). */
@@ -26,7 +27,8 @@ export async function talk(text: string): Promise<CharacterResponse | null> {
     const res = await sendChat(req)
     useCharacterStore.getState().setConnection(res.source === 'offline' ? 'offline-demo' : 'ok')
     useCharacterStore.getState().addMessage({ role: 'assistant', content: res.response.dialogue, emotion: res.response.emotion })
-    useCharacterStore.getState().setEmotion(res.response.emotion, res.response.emotionIntensity)
+    director.perform(res.response)
+    director.beginSpeech(res.response.dialogue)
     return res.response
   } catch (e) {
     if (e instanceof ChatError) useCharacterStore.getState().setConnection('unavailable')
