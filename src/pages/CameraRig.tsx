@@ -18,7 +18,8 @@ const PRESETS: Record<CameraMode, { target: [number, number, number]; dist: numb
 export default function CameraRig() {
   const ctl = useRef<OrbitImpl>(null)
   const mode = useCharacterStore((s) => s.cameraMode)
-  const { camera } = useThree()
+  const { camera, size } = useThree()
+  const aspect = size.width / Math.max(1, size.height)
   const tween = useRef<{ t: number; from: THREE.Vector3; fromT: THREE.Vector3; to: THREE.Vector3; toT: THREE.Vector3; fov0: number; fov1: number } | null>(null)
   const kick = useRef(0)
   const lastKick = useRef(0)
@@ -29,8 +30,11 @@ export default function CameraRig() {
     const c = ctl.current
     if (!c) return
     const p = PRESETS[mode]
-    const target = new THREE.Vector3(...p.target)
-    const sph = new THREE.Spherical(p.dist, p.polar, p.azim)
+    // portrait screens: back off so the whole character fits, and aim a little low to leave room for the chat drawer
+    const portrait = aspect < 0.85
+    const fit = portrait ? Math.pow(0.85 / aspect, 0.75) : 1
+    const target = new THREE.Vector3(p.target[0], p.target[1] - (portrait && mode !== 'face' ? 0.14 : 0), p.target[2])
+    const sph = new THREE.Spherical(p.dist * fit, p.polar, p.azim)
     const to = new THREE.Vector3().setFromSpherical(sph).add(target)
     if (first.current) {
       first.current = false
@@ -39,7 +43,7 @@ export default function CameraRig() {
       return
     }
     tween.current = { t: 0, from: camera.position.clone(), fromT: c.target.clone(), to, toT: target, fov0: (camera as THREE.PerspectiveCamera).fov, fov1: p.fov }
-  }, [mode, camera])
+  }, [mode, camera, aspect < 0.85])
 
   const focus = useRef(0)
   const lastFocus = useRef(0)
@@ -97,6 +101,7 @@ export default function CameraRig() {
       maxDistance={8}
       minPolarAngle={0.3}
       maxPolarAngle={Math.PI * 0.53}
+      touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE }}
       onStart={() => { tween.current = null }}
     />
   )

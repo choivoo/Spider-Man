@@ -4,7 +4,8 @@ import { talk } from '../ai/conversation'
 import { toggleMic } from './voiceControl'
 import { SpeechInput } from '../audio/VoiceManager'
 
-export default function Chat() {
+export default function Chat({ mobile = false }: { mobile?: boolean }) {
+  const [sheet, setSheet] = useState<'peek' | 'open'>('peek')
   const messages = useCharacterStore((s) => s.messages)
   const busy = useCharacterStore((s) => s.busy)
   const connection = useCharacterStore((s) => s.connection)
@@ -23,8 +24,9 @@ export default function Chat() {
   }
 
   return (
-    <section className="chat" aria-label="Chat">
-      <header className="chat-head">
+    <section className={`chat${mobile ? ` sheet ${sheet}` : ''}`} aria-label="Chat">
+      <header className="chat-head" onClick={() => mobile && setSheet((v) => (v === 'peek' ? 'open' : 'peek'))}>
+        {mobile && <span className="grab" aria-hidden="true" />}
         <span className="chat-title">Peter</span>
         {connection === 'offline-demo' && <span className="chip warn" title="Set ANTHROPIC_API_KEY on the server">demo brain</span>}
         {connection === 'unavailable' && <span className="chip err">offline</span>}

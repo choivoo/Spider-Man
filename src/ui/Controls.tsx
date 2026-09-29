@@ -1,5 +1,5 @@
 import { useCharacterStore } from '../store/characterStore'
-import { command, nano, publishSuitStatus } from '../transformation'
+import { command } from '../transformation'
 import { cycleCamera } from './useHotkeys'
 import { useSettings } from '../store/settingsStore'
 import { triggerSpiderSense, triggerWebShoot } from '../character/SpiderFX'
@@ -10,17 +10,9 @@ export default function Controls() {
   const hud = useSettings((s) => s.hud)
   const set = useSettings((s) => s.set)
   const busy = suit.phase !== 'IDLE'
-  const deployed = suit.arms === 'ARMS_DEPLOYED'
   const spider = suit.form === 'SPIDER'
   return (
     <div className="controls-wrap">
-      {deployed && (
-        <div className="controls modes" role="toolbar" aria-label="Spider arm modes">
-          {(['IDLE', 'DEFENSE', 'ATTACK', 'BALANCE', 'POSE'] as const).map((m) => (
-            <button key={m} className={suit.armsMode === m ? 'on' : ''} aria-pressed={suit.armsMode === m} onClick={() => { nano.setArmsMode(m); publishSuitStatus(true) }}>{m[0] + m.slice(1).toLowerCase()}</button>
-          ))}
-        </div>
-      )}
     <div className="controls" role="toolbar" aria-label="Suit controls">
       <button onClick={() => command('SUIT_TOGGLE')} disabled={busy} aria-keyshortcuts="Shift+S" title="Suit up / down (Shift+S)">{spider ? 'Suit ↓' : 'Suit ↑'}<kbd>⇧S</kbd></button>
       <button onClick={() => command('MASK_TOGGLE')} disabled={!spider || busy} aria-keyshortcuts="M" title="Mask (M)">Mask<kbd>M</kbd></button>

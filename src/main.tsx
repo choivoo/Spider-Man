@@ -9,6 +9,7 @@ import { fx, triggerSpiderSense, triggerWebShoot } from './character/SpiderFX'
 // Debug/QA handle (also used by Playwright tests)
 ;(window as unknown as { __spider: unknown }).__spider = { director, store: useCharacterStore, nano, command, fx, triggerSpiderSense, triggerWebShoot }
 
+void import('./pwa').then((m) => m.initPwa())
 void import('./memory').then((m) => m.initMemory())
 void import('./audio/VoiceManager').then((m) => m.voice.init())
 void import('./transformation/cinematic').then((m) => m.initCinematic())
