@@ -4,6 +4,7 @@ import { command } from '../transformation'
 import { useSettings } from '../store/settingsStore'
 import { triggerSpiderSense, triggerWebShoot } from '../character/SpiderFX'
 import { nano } from '../transformation'
+import { toggleMic, cancelVoice } from './voiceControl'
 
 const CAMERA_ORDER: CameraMode[] = ['full', 'upper', 'face', 'cinematic']
 
@@ -25,7 +26,7 @@ export const registerHotkey = (combo: string, fn: (e: KeyboardEvent) => void) =>
 export function useHotkeys() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { (document.activeElement as HTMLElement | null)?.blur?.(); extra.get('escape')?.(e); return }
+      if (e.key === 'Escape') { (document.activeElement as HTMLElement | null)?.blur?.(); extra.get('escape')?.(e); cancelVoice(); return }
       if (isTyping(e.target) || e.ctrlKey || e.metaKey || e.altKey) return
       const combo = (e.shiftKey ? 'shift+' : '') + e.key.toLowerCase()
       const fn = extra.get(combo)
@@ -34,6 +35,7 @@ export function useHotkeys() {
       else if (combo === 'shift+s') command('SUIT_TOGGLE')
       else if (combo === 'm') command('MASK_TOGGLE')
       else if (combo === 'a') command('ARMS_TOGGLE')
+      else if (combo === 'v') toggleMic()
       else if (combo === 'x') triggerSpiderSense()
       else if (combo === 'b') { if (nano.form === 'SPIDER') triggerWebShoot() }
       else if (combo === 'h') useSettings.getState().set({ hud: !useSettings.getState().hud })

@@ -22,6 +22,7 @@ interface CharacterStore {
   emotion: { emotion: Emotion; intensity: number }
   speaking: boolean
   sense: boolean
+  voice: { listening: boolean; interim: string; error: string }
   suit: SuitStatus
   cameraMode: CameraMode
   vars: CharacterVars
@@ -29,6 +30,7 @@ interface CharacterStore {
   setBusy: (b: boolean) => void
   setSpeaking: (b: boolean) => void
   setSense: (b: boolean) => void
+  setVoiceState: (p: Partial<{ listening: boolean; interim: string; error: string }>) => void
   setSuit: (s: SuitStatus) => void
   setCameraMode: (m: CameraMode) => void
   setConnection: (c: Connection) => void
@@ -44,6 +46,7 @@ export const useCharacterStore = create<CharacterStore>((set) => ({
   emotion: { emotion: 'neutral', intensity: 0.3 },
   speaking: false,
   sense: false,
+  voice: { listening: false, interim: '', error: '' },
   suit: { form: 'CIVILIAN', phase: 'IDLE', mask: 'MASK_OPEN', arms: 'ARMS_RETRACTED', armsMode: 'IDLE', blend: 0, label: 'CIVILIAN_IDLE' },
   cameraMode: 'full',
   vars: { ...DEFAULT_VARS },
@@ -55,6 +58,7 @@ export const useCharacterStore = create<CharacterStore>((set) => ({
   setBusy: (busy) => set({ busy }),
   setSpeaking: (speaking) => set({ speaking }),
   setSense: (sense) => set({ sense }),
+  setVoiceState: (p) => set((s) => ({ voice: { ...s.voice, ...p } })),
   setSuit: (suit) => set({ suit }),
   setCameraMode: (cameraMode) => set({ cameraMode }),
   setConnection: (connection) => set({ connection }),

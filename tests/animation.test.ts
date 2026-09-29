@@ -43,3 +43,21 @@ describe('face controller', () => {
     expect(blinked).toBe(true)
   })
 })
+
+import { voiceParams, chunkText, detectLang } from '../src/audio/emotionVoice'
+describe('emotion voice', () => {
+  it('modulates pitch/rate by emotion and hero form', () => {
+    const calm = voiceParams('neutral', 0.5, false), excited = voiceParams('excited', 1, false), sad = voiceParams('sad', 1, false), hero = voiceParams('neutral', 0.5, true)
+    expect(excited.pitch).toBeGreaterThan(calm.pitch); expect(excited.rate).toBeGreaterThan(calm.rate)
+    expect(sad.pitch).toBeLessThan(calm.pitch); expect(sad.volume).toBeLessThan(calm.volume)
+    expect(hero.rate).toBeGreaterThan(calm.rate)
+    for (const p of [calm, excited, sad, hero]) { expect(p.pitch).toBeGreaterThan(0.5); expect(p.rate).toBeLessThanOrEqual(1.6) }
+  })
+  it('chunks long text on sentence boundaries with offsets', () => {
+    const t = '첫 번째 문장입니다. 두 번째 문장이에요! 세 번째는 조금 더 긴 문장이라서 잘릴 수도 있어요? 네.'
+    const c = chunkText(t, 30)
+    expect(c.map((x) => x.text).join('')).toBe(t)
+    for (const ch of c) expect(t.slice(ch.offset, ch.offset + ch.text.length)).toBe(ch.text)
+  })
+  it('detects language', () => { expect(detectLang('안녕')).toBe('ko-KR'); expect(detectLang('hello')).toBe('en-US') })
+})

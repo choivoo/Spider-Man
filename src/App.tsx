@@ -3,6 +3,7 @@ import Chat from './ui/Chat'
 import CameraBar from './ui/CameraBar'
 import HUD from './ui/HUD'
 import Controls from './ui/Controls'
+import Subtitles from './ui/Subtitles'
 import { useHotkeys } from './ui/useHotkeys'
 import { useCharacterStore } from './store/characterStore'
 
@@ -16,6 +17,7 @@ export default function App() {
         <Stage />
         <CameraBar />
         <HUD />
+        <Subtitles />
         <Controls />
       </main>
       <aside className="side"><Chat /></aside>

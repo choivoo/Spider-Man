@@ -5,6 +5,7 @@ import { director } from '../character/director'
 import { updateVars } from './emotions'
 import { planActions } from './actions'
 import { getWorld } from './executor'
+import { voice } from '../audio/VoiceManager'
 import { sanitizeForSpeech, VarietyGuard } from './personality'
 import { memory, maybeSummarize } from '../memory'
 import { isExplicitRemember } from '../memory/memoryManager'
@@ -52,7 +53,7 @@ export async function talk(text: string, opts: { source?: 'text' | 'voice' } = {
     else if (isExplicitRemember(clean)) memory.add({ content: `User said: ${clean.slice(0, 240)}`, type: 'importantEvents', importance: 90, tags: ['explicit'] })
     void maybeSummarize()
     director.perform(response)
-    director.beginSpeech(response.dialogue)
+    void voice.speak(response.dialogue, { emotion: response.emotion, intensity: response.emotionIntensity, spider: req.form === 'spider' })
     if (world) {
       const cmds = planActions(response, { ...world.context(), allowActions: settings.allowAIActions, now: Date.now() })
       if (cmds.length) world.run(cmds)

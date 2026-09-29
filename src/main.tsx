@@ -10,5 +10,6 @@ import { fx, triggerSpiderSense, triggerWebShoot } from './character/SpiderFX'
 ;(window as unknown as { __spider: unknown }).__spider = { director, store: useCharacterStore, nano, command, fx, triggerSpiderSense, triggerWebShoot }
 
 void import('./memory').then((m) => m.initMemory())
+void import('./audio/VoiceManager').then((m) => m.voice.init())
 void import('./transformation/cinematic').then((m) => m.initCinematic())
 createRoot(document.getElementById('root')!).render(<App />)

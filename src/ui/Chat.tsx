@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCharacterStore } from '../store/characterStore'
 import { talk } from '../ai/conversation'
+import { toggleMic } from './voiceControl'
+import { SpeechInput } from '../audio/VoiceManager'
 
 export default function Chat() {
   const messages = useCharacterStore((s) => s.messages)
   const busy = useCharacterStore((s) => s.busy)
   const connection = useCharacterStore((s) => s.connection)
+  const voiceState = useCharacterStore((s) => s.voice)
   const [text, setText] = useState('')
   const endRef = useRef<HTMLDivElement>(null)
 
@@ -33,10 +36,14 @@ export default function Chat() {
         ))}
         {busy && <div className="bubble assistant typing" aria-label="typing"><i /><i /><i /></div>}
         {connection === 'unavailable' && <p className="notice">Connection temporarily unavailable.</p>}
+        {voiceState.error && <p className="notice">{voiceState.error}</p>}
         <div ref={endRef} />
       </div>
       <form className="chat-input" onSubmit={submit}>
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Message…" aria-label="Message" enterKeyHint="send" />
+        {SpeechInput.supported() && (
+          <button type="button" className={`mic${voiceState.listening ? ' live' : ''}`} onClick={toggleMic} aria-pressed={voiceState.listening} aria-label="Voice input (V)" title="Voice input (V)">{voiceState.listening ? '■' : '🎙'}</button>
+        )}
+        <input value={voiceState.listening ? voiceState.interim : text} onChange={(e) => setText(e.target.value)} placeholder={voiceState.listening ? 'Listening…' : 'Message…'} aria-label="Message" enterKeyHint="send" readOnly={voiceState.listening} />
         <button type="submit" disabled={busy || !text.trim()}>Send</button>
       </form>
     </section>
