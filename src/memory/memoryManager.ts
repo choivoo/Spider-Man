@@ -138,7 +138,8 @@ export class MemoryManager {
 
   // ---- short-term memory
   recordTurn(role: 'user' | 'assistant', content: string) {
-    this.turns.push({ role, content, ts: Date.now() })
+    // never persist anything that looks like a secret (the live conversation still saw it)
+    this.turns.push({ role, content: looksSensitive(content) ? '[message withheld: looked sensitive]' : content, ts: Date.now() })
     if (role === 'assistant') this.turnsSinceSummary++
     if (this.turns.length > 60) this.turns.splice(0, this.turns.length - 60)
     this.touch()

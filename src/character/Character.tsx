@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { buildRig } from './ProceduralRig'
@@ -9,17 +9,35 @@ import { nano, publishSuitStatus } from '../transformation'
 import { partUniforms, globalNano } from '../transformation/nanoMaterial'
 import { NanoParticles } from '../transformation/NanoParticles'
 import { useQuality } from '../quality/quality'
+import { useBoot } from '../boot'
 import { fx } from './SpiderFX'
 import { SpiderArms } from '../spiderArms/SpiderArms'
 import { POSE_CROUCH } from '../animation/poses'
 import { LODMesh } from './loft'
 import { LODManager } from './lod'
+import type { ExternalCharacter } from './glbAdapter'
 import { SUIT_PARTS, type SuitPartName } from './rigSpec'
 
+/** Loads an optional drop-in GLB (/models/character.glb); otherwise uses the procedural character. */
 export default function Character() {
+  const gl = useThree((s) => s.gl)
+  const [ext, setExt] = useState<ExternalCharacter | null | undefined>(undefined)
+  useEffect(() => {
+    let dead = false
+    // the GLB adapter (and its Draco/KTX2/Meshopt loaders) is only fetched when needed
+    import('./glbAdapter').then((m) => m.loadExternalCharacter(gl)).then((e) => { if (!dead) setExt(e) }).catch(() => { if (!dead) setExt(null) })
+    return () => { dead = true }
+  }, [gl])
+  if (ext === undefined) return null
+  return <CharacterInner ext={ext} />
+}
+
+function CharacterInner({ ext }: { ext: ExternalCharacter | null }) {
   const model = useMemo(() => {
-    const rig = buildRig()
-    const civ = buildCivilian(rig)
+    const rig = ext ? ext.rig : buildRig()
+    const civ = ext
+      ? { group: new THREE.Group(), face: ext.face, lodMeshes: [] as LODMesh[], hairInstanced: null as unknown as THREE.InstancedMesh, dispose: () => ext.dispose() }
+      : buildCivilian(rig)
     const suit = buildSuit(rig, 1)
     // group meshes for cheap visibility switching
     const civByPart = Object.fromEntries(SUIT_PARTS.map((p) => [p, [] as THREE.Object3D[]])) as Record<SuitPartName, THREE.Object3D[]>
@@ -50,11 +68,12 @@ export default function Character() {
     const arms = new SpiderArms(rig, useQuality.getState().config.armSegments)
     const lod = new LODManager()
     return { rig, civ, suit, civByPart, suitByPart, particles, outlines, outlineU, arms, lod }
-  }, [])
+  }, [ext])
   const { gl, size, viewport } = useThree()
 
   useEffect(() => {
     director.attachRig(model.rig)
+    useBoot.getState().mark('character')
     const onMove = (e: PointerEvent) => {
       const r = gl.domElement.getBoundingClientRect()
       director.look.pointerNdc.set(((e.clientX - r.left) / r.width) * 2 - 1, -(((e.clientY - r.top) / r.height) * 2 - 1))

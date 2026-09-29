@@ -50,6 +50,10 @@ describe('memory manager', () => {
     const m2 = new MemoryManager(m.store); await m2.load()
     expect(m2.items).toHaveLength(1)
   })
+  it('does not persist sensitive turns', () => {
+    const m = mk(); m.recordTurn('user', 'my password is hunter2'); m.recordTurn('user', 'I like tea')
+    expect(JSON.stringify(m.snapshot())).not.toContain('hunter2'); expect(JSON.stringify(m.snapshot())).toContain('I like tea')
+  })
   it('helpers', () => {
     expect(isExplicitRemember('이거 꼭 기억해')).toBe(true)
     expect(tokens('웹게임').has('웹게')).toBe(true)

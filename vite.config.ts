@@ -41,6 +41,7 @@ function devApi(): Plugin {
 export default defineConfig({
   plugins: [react(), devApi()],
   resolve: { alias: { '@': path.resolve(import.meta.dirname, "src") } },
+  define: { __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '1.0.0') },
   build: { target: 'es2022', chunkSizeWarningLimit: 1600 },
   test: { environment: 'node', include: ['tests/**/*.test.ts'] },
 })

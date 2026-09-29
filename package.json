@@ -1,9 +1,9 @@
 {
   "name": "spider-ai",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "SPIDER-AI — a real-time 3D AI character that transforms between a civilian and a nanotech Spider suit.",
+  "description": "SPIDER-AI \u2014 a real-time 3D AI character that transforms between a civilian and a nanotech Spider suit.",
   "scripts": {
     "predev": "node scripts/copy-basis.mjs",
     "dev": "vite",
@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "test:qa": "QA_CYCLES=100 playwright test tests/e2e/qa.spec.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",
@@ -38,5 +39,8 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.1",
     "vitest": "^5.0.2"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

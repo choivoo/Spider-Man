@@ -26,7 +26,7 @@ export function partFromName(name: string): SuitPartName {
 
 export interface CivilianModel {
   group: THREE.Group
-  face: CivilianFace
+  face: import('./glbAdapter').FaceView
   lodMeshes: LODMesh[]
   hairInstanced: THREE.InstancedMesh
   dispose(): void
@@ -153,10 +153,6 @@ export function buildCivilian(rig: Rig): CivilianModel {
     // laces
     for (let i = 0; i < 4; i++) {
       const lace = new THREE.Mesh(new THREE.BoxGeometry(0.058, 0.0035, 0.006), makeMaterial('lace', `Foot_${side}`))
-      const z = -0.005 + i * 0.024
-      lace.position.set(0, -0.0055 - i * 0.0085 - 0.014, z + 0.002)
-      lace.position.y = -0.033 + 0.03 - i * 0.0004 - 0.0
-      lace.position.y = 0.0 - 0.01 - i * 0.0075
       lace.rotation.x = -0.45 + i * 0.05
       lace.position.set(0, -0.004 - i * 0.0065, 0.004 + i * 0.023)
       foot.add(lace)

@@ -138,7 +138,8 @@ export class CivilianFace {
     const wide = F.Surprise * 0.5
     const closure = (blink: number) => Math.min(1, blink + F.Squint * 0.32 + F.Sad * 0.1 - wide * 0.4)
     const setLid = (m: THREE.Mesh, c: number) => {
-      m.visible = c > 0.02
+      // scale (not .visible): visibility belongs to the nano reveal system, which hides the whole face while the mask is on
+      m.scale.setScalar(c > 0.02 ? 1 : 0.0001)
       m.rotation.x = THREE.MathUtils.lerp(-0.25, 0.55, Math.max(0, c))
     }
     setLid(this.lidL, closure(F.Blink_L))
@@ -198,7 +199,7 @@ export class CivilianFace {
       tp[k * 3] = xx; tp[k * 3 + 1] = yTop * (1 - (xx * xx) / (W * W) * 0.5); tp[k * 3 + 2] = zz
       tp[(4 + k) * 3] = xx; tp[(4 + k) * 3 + 1] = tp[k * 3 + 1] - th2; tp[(4 + k) * 3 + 2] = zz
     }
-    this.teeth.visible = H > 0.006
+    this.teeth.scale.setScalar(H > 0.006 ? 1 : 0.0001)
     ;(this.mouthFill.geometry.attributes.position as THREE.BufferAttribute).needsUpdate = true
     ;(this.lips.geometry.attributes.position as THREE.BufferAttribute).needsUpdate = true
     ;(this.teeth.geometry.attributes.position as THREE.BufferAttribute).needsUpdate = true

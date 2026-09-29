@@ -3,6 +3,7 @@ import { LocalMemoryStore, SessionMemoryStore, CloudMemoryStore } from './stores
 import { useSettings, type MemoryMode } from '../store/settingsStore'
 import { useCharacterStore } from '../store/characterStore'
 import { sendChat } from '../ai/claude'
+import { useBoot } from '../boot'
 import { DEFAULT_VARS, type ChatRequest } from '../ai/schema'
 
 const makeStore = (m: MemoryMode) => (m === 'cloud' ? new CloudMemoryStore() : m === 'session' ? new SessionMemoryStore() : new LocalMemoryStore())
@@ -12,6 +13,7 @@ export const memory = new MemoryManager(makeStore(useSettings.getState().memoryM
 /** Load persisted memory and hydrate the character (vars + recent chat) so the character "remembers" across visits. */
 export async function initMemory() {
   await memory.load()
+  useBoot.getState().mark('memory')
   const cs = useCharacterStore.getState()
   cs.patchVars(memory.vars)
   if (cs.messages.length === 0 && memory.turns.length) {
