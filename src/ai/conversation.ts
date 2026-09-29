@@ -1,35 +1,56 @@
 import { sendChat, ChatError } from './claude'
 import { useCharacterStore } from '../store/characterStore'
+import { useSettings } from '../store/settingsStore'
 import { director } from '../character/director'
+import { updateVars } from './emotions'
+import { planActions } from './actions'
+import { getWorld } from './executor'
+import { sanitizeForSpeech, VarietyGuard } from './personality'
 import type { ChatRequest, CharacterResponse } from './schema'
 
-/** Sends the user's message through the AI pipeline and returns the parsed response (or null on failure). */
-export async function talk(text: string): Promise<CharacterResponse | null> {
+const guard = new VarietyGuard()
+
+/** Everything that happens between the user pressing Enter and the character reacting. */
+export async function talk(text: string, opts: { source?: 'text' | 'voice' } = {}): Promise<CharacterResponse | null> {
   const s = useCharacterStore.getState()
-  if (s.busy || !text.trim()) return null
-  s.addMessage({ role: 'user', content: text.trim() })
+  const clean = text.trim()
+  if (s.busy || !clean) return null
+  s.addMessage({ role: 'user', content: clean })
   s.setBusy(true)
+  director.look.lookAtUser()
   try {
     const st = useCharacterStore.getState()
+    const world = getWorld()
+    const wctx = world?.context()
+    const settings = useSettings.getState()
     const req: ChatRequest = {
       mode: 'chat',
-      form: 'peter',
-      maskOpen: false,
-      armsDeployed: false,
+      form: wctx?.form ?? 'peter',
+      maskOpen: wctx?.maskOpen ?? false,
+      armsDeployed: wctx?.armsDeployed ?? false,
       messages: st.messages.slice(-16).map((m) => ({ role: m.role, content: m.content })),
       memories: [],
       summary: '',
       vars: st.vars,
       emotion: st.emotion,
       locale: navigator.language,
-      allowActions: false,
+      allowActions: settings.allowAIActions,
+      secondsSinceLastTransform: wctx ? (Date.now() - wctx.lastTransformAt) / 1000 : undefined,
     }
     const res = await sendChat(req)
-    useCharacterStore.getState().setConnection(res.source === 'offline' ? 'offline-demo' : 'ok')
-    useCharacterStore.getState().addMessage({ role: 'assistant', content: res.response.dialogue, emotion: res.response.emotion })
-    director.perform(res.response)
-    director.beginSpeech(res.response.dialogue)
-    return res.response
+    const response = guard.apply({ ...res.response, dialogue: sanitizeForSpeech(res.response.dialogue) || res.response.dialogue })
+    const cs = useCharacterStore.getState()
+    cs.setConnection(res.source === 'offline' ? 'offline-demo' : 'ok')
+    cs.addMessage({ role: 'assistant', content: response.dialogue, emotion: response.emotion })
+    cs.patchVars(updateVars(cs.vars, { userText: clean, response, form: req.form }))
+    director.perform(response)
+    director.beginSpeech(response.dialogue)
+    if (world) {
+      const cmds = planActions(response, { ...world.context(), allowActions: settings.allowAIActions, now: Date.now() })
+      if (cmds.length) world.run(cmds)
+    }
+    void opts
+    return response
   } catch (e) {
     if (e instanceof ChatError) useCharacterStore.getState().setConnection('unavailable')
     return null
