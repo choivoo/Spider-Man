@@ -270,6 +270,17 @@ export class NanotechController {
     this.drain()
   }
 
+  /** Particle lifecycle per region: leads the reveal when forming, trails it when recalling. */
+  particleProgress(p: SuitPartName): number {
+    if (this.phase === 'SUIT_UP') { const [a, b] = SUIT_UP_WINDOWS[p]; return window01(this.t, [a - 0.32, b - 0.02]) }
+    if (this.phase === 'SUIT_DOWN') {
+      if (p === 'Head' && this.progress.Head === 0 && this.mask === 'MASK_OPEN') return 0
+      const [a, b] = SUIT_DOWN_WINDOWS[p]; return 1 - window01(this.t, [a, b + 0.32])
+    }
+    if (p === 'Head' && (this.mask === 'MASK_CLOSING' || this.mask === 'MASK_OPENING')) return this.progress.Head
+    return this.form === 'SPIDER' && p !== 'Head' ? 1 : this.form === 'SPIDER' && this.mask === 'MASK_CLOSED' ? 1 : 0
+  }
+
   /** Debug/QA: jump into the middle of a transformation and hold there. */
   scrub(kind: 'up' | 'down' | null, t = 0) {
     if (kind === null) { this.frozen = false; return }

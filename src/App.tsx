@@ -9,9 +9,10 @@ import { useCharacterStore } from './store/characterStore'
 export default function App() {
   useHotkeys()
   const spider = useCharacterStore((s) => s.suit.blend > 0.5)
+  const sense = useCharacterStore((s) => s.sense)
   return (
     <div className="app" data-theme={spider ? 'spider' : 'peter'}>
-      <main className="stage">
+      <main className={`stage${sense ? ' sense' : ''}`}>
         <Stage />
         <CameraBar />
         <HUD />

@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { BONES, type BoneName } from '../character/rigSpec'
 import type { Rig } from '../character/ProceduralRig'
-import { STANCE_CIVILIAN, STANCE_SPIDER, HOLD_POSES, GESTURES, IDLE_VARIATIONS } from './poses'
+import { STANCE_CIVILIAN, STANCE_SPIDER, HOLD_POSES, GESTURES, EXTRA_GESTURES, IDLE_VARIATIONS } from './poses'
 import { sampleGesture, lerp, clamp, type Gesture, type Pose, type V3 } from './pose'
 import type { Emotion } from '../ai/schema'
 import type { LookOutput } from './LookAtController'
@@ -65,7 +65,7 @@ export class AnimationController {
   play(name: string) {
     if (name === 'none') return
     if (name in HOLD_POSES) { this.holdName = this.holdName === name ? null : name; return }
-    const def = (GESTURES as Record<string, Gesture>)[name]
+    const def = (GESTURES as Record<string, Gesture>)[name] ?? EXTRA_GESTURES[name]
     if (def) this.gesture = { def, t: 0, name }
   }
   release() { this.holdName = null }
@@ -152,7 +152,7 @@ export class AnimationController {
 
     // explicit gesture
     if (this.frozen) {
-      const g = (GESTURES as Record<string, Gesture>)[this.frozen.name]
+      const g = (GESTURES as Record<string, Gesture>)[this.frozen.name] ?? EXTRA_GESTURES[this.frozen.name]
       if (g) applyGesture(g, this.frozen.t)
     } else if (this.gesture) {
       this.gesture.t += dt

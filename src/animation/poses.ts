@@ -35,6 +35,27 @@ export const HOLD_POSES: Record<string, Pose> = {
   },
 }
 
+/** Not selectable by the AI (triggered by effects). */
+export const EXTRA_GESTURES: Record<string, Gesture> = {
+  web_shoot: {
+    duration: 1.1,
+    keys: [
+      { t: 0, pose: {} },
+      { t: 0.14, pose: { upperArmR: [-1.25, 0, -0.1], foreArmR: [-0.15, 0, 0], handR: [0.5, 0, 0], spine: [0.04, -0.12, 0], head: [-0.05, -0.1, 0], chest: [0, -0.18, 0] } },
+      { t: 0.75, pose: { upperArmR: [-1.25, 0, -0.1], foreArmR: [-0.15, 0, 0], handR: [0.5, 0, 0], spine: [0.04, -0.12, 0], head: [-0.05, -0.1, 0], chest: [0, -0.18, 0] } },
+      { t: 1.1, pose: {} },
+    ],
+  },
+  spider_sense: {
+    duration: 1.0,
+    keys: [
+      { t: 0, pose: {} },
+      { t: 0.12, pose: { head: [-0.12, 0.2, 0], chest: [-0.06, 0, 0], clavicleL: [0, 0, 0.14], clavicleR: [0, 0, -0.14], upperArmL: [-0.2, 0, 0.35], upperArmR: [-0.2, 0, -0.35], foreArmL: [-0.7, 0, 0], foreArmR: [-0.7, 0, 0] } },
+      { t: 0.7, pose: { head: [-0.02, -0.2, 0], chest: [-0.04, 0, 0], upperArmL: [-0.2, 0, 0.3], upperArmR: [-0.2, 0, -0.3], foreArmL: [-0.7, 0, 0], foreArmR: [-0.7, 0, 0] } },
+      { t: 1.0, pose: {} },
+    ],
+  },
+}
 const swayOsc = (f: number, a: number) => (t: number) => Math.sin(t * f) * a
 
 export const GESTURES: Record<Exclude<GestureName, 'none' | 'cross_arms' | 'hands_in_pocket'>, Gesture> = {

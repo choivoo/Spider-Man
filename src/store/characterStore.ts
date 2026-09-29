@@ -21,12 +21,14 @@ interface CharacterStore {
   connection: Connection
   emotion: { emotion: Emotion; intensity: number }
   speaking: boolean
+  sense: boolean
   suit: SuitStatus
   cameraMode: CameraMode
   vars: CharacterVars
   addMessage: (m: Omit<Message, 'id' | 'ts'>) => Message
   setBusy: (b: boolean) => void
   setSpeaking: (b: boolean) => void
+  setSense: (b: boolean) => void
   setSuit: (s: SuitStatus) => void
   setCameraMode: (m: CameraMode) => void
   setConnection: (c: Connection) => void
@@ -41,6 +43,7 @@ export const useCharacterStore = create<CharacterStore>((set) => ({
   connection: 'ok',
   emotion: { emotion: 'neutral', intensity: 0.3 },
   speaking: false,
+  sense: false,
   suit: { form: 'CIVILIAN', phase: 'IDLE', mask: 'MASK_OPEN', arms: 'ARMS_RETRACTED', armsMode: 'IDLE', blend: 0, label: 'CIVILIAN_IDLE' },
   cameraMode: 'full',
   vars: { ...DEFAULT_VARS },
@@ -51,6 +54,7 @@ export const useCharacterStore = create<CharacterStore>((set) => ({
   },
   setBusy: (busy) => set({ busy }),
   setSpeaking: (speaking) => set({ speaking }),
+  setSense: (sense) => set({ sense }),
   setSuit: (suit) => set({ suit }),
   setCameraMode: (cameraMode) => set({ cameraMode }),
   setConnection: (connection) => set({ connection }),

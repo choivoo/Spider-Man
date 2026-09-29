@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { useCharacterStore, type CameraMode } from '../store/characterStore'
 import { command } from '../transformation'
 import { useSettings } from '../store/settingsStore'
+import { triggerSpiderSense, triggerWebShoot } from '../character/SpiderFX'
+import { nano } from '../transformation'
 
 const CAMERA_ORDER: CameraMode[] = ['full', 'upper', 'face', 'cinematic']
 
@@ -32,6 +34,8 @@ export function useHotkeys() {
       else if (combo === 'shift+s') command('SUIT_TOGGLE')
       else if (combo === 'm') command('MASK_TOGGLE')
       else if (combo === 'a') command('ARMS_TOGGLE')
+      else if (combo === 'x') triggerSpiderSense()
+      else if (combo === 'b') { if (nano.form === 'SPIDER') triggerWebShoot() }
       else if (combo === 'h') useSettings.getState().set({ hud: !useSettings.getState().hud })
     }
     window.addEventListener('keydown', onKey)

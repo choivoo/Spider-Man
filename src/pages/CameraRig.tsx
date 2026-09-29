@@ -4,6 +4,8 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { OrbitControls as OrbitImpl } from 'three-stdlib'
 import { useCharacterStore, type CameraMode } from '../store/characterStore'
+import { cameraBus } from '../character/cameraBus'
+import { director } from '../character/director'
 
 const PRESETS: Record<CameraMode, { target: [number, number, number]; dist: number; azim: number; polar: number; fov: number }> = {
   face: { target: [0, 1.6, 0], dist: 1.05, azim: 0.05, polar: 1.5, fov: 28 },
@@ -39,10 +41,10 @@ export default function CameraRig() {
     tween.current = { t: 0, from: camera.position.clone(), fromT: c.target.clone(), to, toT: target, fov0: (camera as THREE.PerspectiveCamera).fov, fov1: p.fov }
   }, [mode, camera])
 
-  useEffect(() => {
-    ;(window as unknown as { __cameraKick?: (k: number) => void }).__cameraKick = (k: number) => { kickTarget.current = k }
-    return () => { delete (window as unknown as { __cameraKick?: unknown }).__cameraKick }
-  }, [])
+  const focus = useRef(0)
+  const lastFocus = useRef(0)
+  const headW = useRef(new THREE.Vector3())
+  const focusOff = useRef(new THREE.Vector3())
 
   useFrame((_, dt) => {
     const c = ctl.current
@@ -58,6 +60,7 @@ export default function CameraRig() {
       if (tw.t >= 1) tween.current = null
     }
     // additive zoom kick (dolly toward target)
+    kickTarget.current = cameraBus.kick
     kick.current += (kickTarget.current - kick.current) * (1 - Math.exp(-dt * 5))
     const dk = kick.current - lastKick.current
     if (Math.abs(dk) > 1e-5) {
@@ -65,6 +68,20 @@ export default function CameraRig() {
       off.multiplyScalar((1 - kick.current) / (1 - lastKick.current))
       camera.position.copy(c.target).add(off)
       lastKick.current = kick.current
+    }
+    // face focus: shift target toward the head and dolly in, tracked as an explicit offset so it always unwinds exactly
+    focus.current += (cameraBus.focus - focus.current) * (1 - Math.exp(-dt * 4))
+    if ((Math.abs(focus.current) > 1e-4 || Math.abs(lastFocus.current) > 1e-4) && director.anim) {
+      director.anim.rig.bones.head.getWorldPosition(headW.current)
+      const base = c.target.clone().sub(focusOff.current)
+      const newOff = headW.current.clone().sub(base).multiplyScalar(focus.current * 0.9)
+      const delta = newOff.clone().sub(focusOff.current)
+      camera.position.add(delta); c.target.add(delta)
+      focusOff.current.copy(newOff)
+      const off = camera.position.clone().sub(c.target)
+      off.multiplyScalar((1 - focus.current * 0.42) / (1 - lastFocus.current * 0.42))
+      camera.position.copy(c.target).add(off)
+      lastFocus.current = focus.current
     }
     c.update()
   })
