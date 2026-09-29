@@ -6,6 +6,8 @@ import { updateVars } from './emotions'
 import { planActions } from './actions'
 import { getWorld } from './executor'
 import { sanitizeForSpeech, VarietyGuard } from './personality'
+import { memory, maybeSummarize } from '../memory'
+import { isExplicitRemember } from '../memory/memoryManager'
 import type { ChatRequest, CharacterResponse } from './schema'
 
 const guard = new VarietyGuard()
@@ -18,6 +20,7 @@ export async function talk(text: string, opts: { source?: 'text' | 'voice' } = {
   s.addMessage({ role: 'user', content: clean })
   s.setBusy(true)
   director.look.lookAtUser()
+  memory.recordTurn('user', clean)
   try {
     const st = useCharacterStore.getState()
     const world = getWorld()
@@ -29,8 +32,8 @@ export async function talk(text: string, opts: { source?: 'text' | 'voice' } = {
       maskOpen: wctx?.maskOpen ?? false,
       armsDeployed: wctx?.armsDeployed ?? false,
       messages: st.messages.slice(-16).map((m) => ({ role: m.role, content: m.content })),
-      memories: [],
-      summary: '',
+      memories: memory.relevant(clean),
+      summary: memory.summary,
       vars: st.vars,
       emotion: st.emotion,
       locale: navigator.language,
@@ -43,6 +46,11 @@ export async function talk(text: string, opts: { source?: 'text' | 'voice' } = {
     cs.setConnection(res.source === 'offline' ? 'offline-demo' : 'ok')
     cs.addMessage({ role: 'assistant', content: response.dialogue, emotion: response.emotion })
     cs.patchVars(updateVars(cs.vars, { userText: clean, response, form: req.form }))
+    memory.setVars(useCharacterStore.getState().vars)
+    memory.recordTurn('assistant', response.dialogue)
+    if (response.memoryCandidate) memory.add({ ...response.memoryCandidate, importance: isExplicitRemember(clean) ? Math.max(90, response.memoryCandidate.importance) : response.memoryCandidate.importance })
+    else if (isExplicitRemember(clean)) memory.add({ content: `User said: ${clean.slice(0, 240)}`, type: 'importantEvents', importance: 90, tags: ['explicit'] })
+    void maybeSummarize()
     director.perform(response)
     director.beginSpeech(response.dialogue)
     if (world) {
